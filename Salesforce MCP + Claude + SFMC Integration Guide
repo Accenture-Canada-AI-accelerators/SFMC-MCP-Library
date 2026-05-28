@@ -1,0 +1,156 @@
+Salesforce MCP + Claude Code Integration Guide
+1. Overview
+Section	Details
+Integration	This guide describes how Salesforce Marketing Cloud (SFMC) integrates with Claude Code using the Model Context Protocol (MCP).
+Transport	The integration communicates over HTTP.
+Auth Method	Authentication uses OAuth 2.0 Authorization Code flow with PKCE (S256) for added security.
+Client Type	The implementation uses a public package, so no client secret is required.
+Token Lifetime	Access tokens remain valid for approximately 18 minutes, and refresh tokens are not used.
+Scope	The integration is scoped at the project level and is active only within the designated project directory.
+
+
+2. Prerequisites
+•	A Salesforce Marketing Cloud account with admin access to Setup → Apps → Installed Packages
+•	An Installed Package configured as:
+•	Package type: Public (no client secret)
+•	Grant type: Authorization Code
+•	Claude Code installed on Windows (AppData\Roaming\Claude\claude-code\<version>\claude.exe)
+•	PowerShell 5.1+ for running the refresh script
+•	A modern browser for the OAuth login flow
+
+3. Gathering Your SFMC Endpoints
+•	Navigate to SFMC Setup → Apps → Installed Packages and open your package
+•	Record the following values:
+Endpoint	Format
+MCP URL	https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/t/<TENANT_ID>/c/<ROUTING_ID>/api/mcp
+REST Base	https://<TENANT_ID>.rest.marketingcloudapis.com
+Auth Base	https://<TENANT_ID>.auth.marketingcloudapis.com
+SFMC Login	https://mc.login.exacttarget.com/hub-cas/login
+•	Note: the <ROUTING_ID> in the MCP URL is not the OAuth client ID — a new client is dynamically registered during each token refresh
+
+4. OAuth Discovery Endpoints
+•	The MCP server publishes standard OAuth metadata at these well-known URLs:
+Purpose	Endpoint
+Client Registration	{MCP_URL}/register
+Authorization	{MCP_URL}/authorize
+Token Exchange	{MCP_URL}/token
+Protected Resource Metadata	{MCP_SERVER}/.well-known/oauth-protected-resource/t/<TENANT>/c/<CLIENT>/api/mcp
+Auth Server Metadata	{AUTH_SERVER}/.well-known/oauth-authorization-server
+
+
+5. Authentication Flow (Step-by-Step)
+    The entire flow is automated by the refresh script, but here is what happens under the hood:
+    1.	Dynamic Client Registration
+    •	Script sends POST {MCP_URL}/register to obtain a fresh OAuth client ID
+    2.	PKCE Challenge Generation
+    •	A random code_verifier is generated
+    •	A code_challenge is derived using SHA-256 (S256 method)
+    3.	Local HTTP Listener
+    •	Script starts a listener on localhost:54322 to capture the callback
+    4.	Browser Authorization
+    •	Script opens {MCP_URL}/authorize in the browser
+    •	MCP server redirects to SFMC login (mc.login.exacttarget.com)
+    •	If an active SFMC session exists, login completes silently (no manual input)
+    5.	Callback Capture
+    •	SFMC redirects back through MCP to localhost:54322/callback?code=...
+    •	Script captures the authorization code
+    6.	Token Exchange
+    •	Script sends POST {MCP_URL}/token with the code + code_verifier
+    •	Receives a Bearer token valid for ~18 minutes
+
+    7.	Claude Code MCP Registration
+    •	Script removes the old MCP entry and re-adds with the fresh token:
+      1.	claude mcp remove salesforce-mcp
+      2.	claude mcp add --transport http salesforce-mcp {MCP_URL} --header "Authorization: Bearer {token}"
+    8.	Connection Verified
+    •	MCP server shows: Connected
+    9.	
+6. Important Auth Constraints
+    Constraint	Detail
+    Client Credentials flow	Not supported — will fail with invalid_client on public packages.
+    Refresh tokens	Not issued — full PKCE re-authentication is required every cycle.
+    SFMC browser session	Must remain active for silent refresh; if it expires, manual login is required.
+    PKCE method	Only S256 is accepted.
+
+7. Automating Token Refresh (Windows Scheduled Task)
+Since tokens expire every ~18 minutes and no refresh tokens exist, a scheduled task keeps the connection alive.
+Task Configuration
+Setting	Value
+Task Name	SFMC-MCP-TokenRefresh
+Task Path	\ClaudeCode\
+Frequency	Every 15 minutes
+Script	C:\Users\<user>\.claude\sfmc-refresh.ps1
+Execution Policy	Bypass
+Window Style	Hidden
+
+Management Commands
+•	Trigger a manual refresh:
+Start-ScheduledTask -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+•	View refresh logs:
+Get-Content "$env:USERPROFILE\.claude\sfmc-refresh.log"
+•	Disable the scheduled task:
+Disable-ScheduledTask -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+•	Enable the scheduled task:
+Enable-ScheduledTask -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+•	Manual re-auth (if the task fails or session expired):
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\sfmc-refresh.ps1"
+
+8. Verifying the Connection
+•	Run the following to confirm the MCP server is active:
+claude mcp list
+•	Expected output should show salesforce-mcp as connected
+•	If the server shows disconnected or returns 401 errors, re-run the refresh script manually
+
+9. Files Created During Setup
+File	Purpose
+~/.claude/sfmc-refresh.ps1	Full OAuth PKCE refresh script that handles registration, authorization, token exchange, and MCP re-registration.
+~/.claude/sfmc-refresh.log	Log output from each refresh cycle.
+~/.claude.json	Main Claude Code configuration file containing the salesforce-mcp server entry with the current bearer token.
+________________________________________
+10. Features Available via the Salesforce MCP Layer
+Once connected, Claude Code can perform SFMC operations conversationally through the MCP bridge. You describe what you need in plain English, and Claude translates it into the correct SFMC REST API calls.
+Data Extension Management
+Capability	API Endpoint	What Claude Can Do
+List DEs	GET /data/v1/customobjects	List all Data Extensions in the account
+Create DEs	POST /data/v1/customobjects	Create new DEs with full field schemas
+Update DEs	PATCH /data/v1/customobjects/{id}	Modify DE properties including sendable config
+Inspect DE Fields	GET /data/v1/customobjects/{id}/fields	Read the full field schema of any DE
+
+Folder Navigation
+Capability	API Endpoint	What Claude Can Do
+Folder Details	GET /email/v1/categories/{id}	Look up any SFMC folder by category ID
+Folder Tree	Walk via parentCatId	Build full folder paths (e.g., Data Extensions > Subfolder > DE Name)
+Filter by Type	GET /email/v1/categories?$filter=categorytype eq 'dataextension'	List all Data Extension folders
+Automations
+Capability	API Endpoint	What Claude Can Do
+List Automations	GET /automation/v1/automations	Retrieve all automations and their statuses
+Check Status	Status field in response	Identify active automations (Ready = active)
+Sendable Data Extension Setup
+•	Claude handles the two-step creation flow automatically:
+•	Step 1 — Create the DE with isSendable: false
+•	Step 2 — PATCH to enable sendable config using string-form fields
+•	This avoids the known JSON deserialization bug when passing sendableSubscriberField as an object
+
+11. SFMC REST API Quirks (Auto-Handled by Claude)
+These undocumented quirks caused repeated failures during the POC. Claude applies them automatically when operating through the MCP layer.
+Quirk	Details
+length vs maxLength	Problem: maxLength is silently ignored, and the API reports that no length was specified.
+Correct approach: Always use length (for example, "length": 100).
+EmailAddress requires length	Problem: The error says the length is "invalid," but it actually means the value is required.
+Correct approach: Always pass "length": 254 for EmailAddress fields.
+Sendable field as string	Problem: Using the object form {"name": "..."} causes a deserialization error.
+Correct approach: Use plain strings, for example: "sendableSubscriberField": "Subscriber Key".
+All booleans required	Problem: Omitting any boolean returns the error "isTemplateField is required."
+Correct approach: Include all of the following: isTemplateField, isHidden, isOverridable, isInheritable, isReadOnly, mustOverride, and isNullable.
+categoryId required	Problem: Data Extension creation fails without a folder reference.
+Correct approach: Look up the folder first using /email/v1/categories/{id} before creating the Data Extension.
+
+
+12. Known Limitations
+•	No refresh tokens — every ~18 minutes a full PKCE re-auth is required (automated via scheduled task)
+•	Browser opens briefly during each refresh cycle to complete the OAuth callback; it auto-closes
+•	Active SFMC session required — if the browser session expires, the next refresh will prompt for manual login
+•	Project-scoped only — the salesforce-mcp server is registered at the project level and is only active inside the designated project directory
+•	Port conflicts — the OAuth callback listener uses localhost:54322; if this port is occupied, the refresh will fail (update the port in the script)
+
+
