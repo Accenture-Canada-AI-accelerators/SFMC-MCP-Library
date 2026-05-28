@@ -1,0 +1,44 @@
+# Credentials & Secrets
+.claude.json
+~/.claude.json
+*.env
+*.secret
+*credentials*
+*token*
+*bearer*
+
+# IDE & Editor
+.vs
+.vscode
+*.code-workspace
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Build artifacts
+/bin
+/obj
+*.dll
+*.exe
+
+# Node/npm (if used)
+node_modules/
+package-lock.json
+
+# Python (if used)
+__pycache__/
+*.pyc
+.venv/
+
+# Local development
+.env.local
+*.local.json
