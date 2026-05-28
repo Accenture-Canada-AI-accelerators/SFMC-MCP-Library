@@ -1,0 +1,259 @@
+# SFMC MCP Integration — Session Notes
+**Date:** 2026-05-25  
+**Project:** MC MCP POC
+
+---
+
+## 1. MCP Server Details
+
+| Field | Value |
+|---|---|
+| **MCP Endpoint** | `https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/t/mcfl8qnsz4yp5b6zc2q3d11y0qty/c/dvxb12q0kyivon1gl7373aie/api/mcp` |
+| **Tenant ID** | `mcfl8qnsz4yp5b6zc2q3d11y0qty` |
+| **Client ID (MCP URL)** | `dvxb12q0kyivon1gl7373aie` |
+| **Transport** | HTTP |
+| **Server name in Claude** | `salesforce-mcp` |
+| **Scope** | Local (project-level) — `MC MCP POC` project only |
+
+---
+
+## 2. REST & Auth API Base URLs
+
+| API | URL |
+|---|---|
+| **REST Base URL** | `https://mcfl8qnsz4yp5b6zc2q3d11y0qty.rest.marketingcloudapis.com` |
+| **Auth Base URL** | `https://mcfl8qnsz4yp5b6zc2q3d11y0qty.auth.marketingcloudapis.com` |
+| **SFMC Login** | `https://mc.login.exacttarget.com/hub-cas/login` |
+| **Stack** | S7 (`mc.s7.exacttarget.com`) |
+| **Enterprise ID** | `7281705` |
+
+---
+
+## 3. OAuth Configuration (Discovered via Well-Known Endpoints)
+
+| Field | Value |
+|---|---|
+| **Grant Type** | `authorization_code` only (no client_credentials, no refresh_token) |
+| **PKCE Required** | Yes — `S256` |
+| **Client Type** | Public (no client secret) |
+| **Registration Endpoint** | `{MCP_URL}/register` |
+| **Authorization Endpoint** | `{MCP_URL}/authorize` |
+| **Token Endpoint** | `{MCP_URL}/token` |
+| **Protected Resource Metadata** | `https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/.well-known/oauth-protected-resource/t/mcfl8qnsz4yp5b6zc2q3d11y0qty/c/dvxb12q0kyivon1gl7373aie/api/mcp` |
+| **Auth Server Metadata** | `{AUTH_SERVER}/.well-known/oauth-authorization-server` |
+| **Token Expiry** | ~1079 seconds (~18 minutes) |
+| **Refresh Token** | NOT supported |
+
+---
+
+## 4. Salesforce Installed Package
+
+| Field | Value |
+|---|---|
+| **Package Type** | Public (no client secret) |
+| **OAuth Client ID** | `dvxb12q0kyivon1gl7373aie` |
+| **Client Secret** | None (public package) |
+| **Grant Type in Package** | Authorization Code |
+| **Location** | SFMC Setup → Apps → Installed Packages |
+
+---
+
+## 5. Files Created
+
+| File | Purpose |
+|---|---|
+| `~/.claude/sfmc-refresh.ps1` | Full OAuth PKCE refresh script — re-authenticates and updates MCP config |
+| `~/.claude/sfmc-refresh.log` | Log output from each refresh run |
+| `~/.claude.json` | Main Claude Code config — contains `salesforce-mcp` MCP server entry with Bearer token |
+
+---
+
+## 6. Windows Scheduled Task
+
+| Field | Value |
+|---|---|
+| **Task Name** | `SFMC-MCP-TokenRefresh` |
+| **Task Path** | `\ClaudeCode\` |
+| **Frequency** | Every 15 minutes |
+| **Script** | `C:\Users\harsh.f.patel\.claude\sfmc-refresh.ps1` |
+| **Execution Policy** | Bypass |
+| **Window Style** | Hidden |
+
+---
+
+## 7. Claude Code Executable
+
+```
+C:\Users\harsh.f.patel\AppData\Roaming\Claude\claude-code\2.1.142\claude.exe
+```
+
+---
+
+## 8. Key Commands
+
+### Check MCP server status
+```powershell
+& "C:\Users\harsh.f.patel\AppData\Roaming\Claude\claude-code\2.1.142\claude.exe" mcp list
+```
+
+### Manually trigger token refresh
+```powershell
+Start-ScheduledTask -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+```
+
+### View refresh log
+```powershell
+Get-Content "$env:USERPROFILE\.claude\sfmc-refresh.log"
+```
+
+### Disable / Enable scheduled task
+```powershell
+Disable-ScheduledTask -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+Enable-ScheduledTask  -TaskPath "\ClaudeCode\" -TaskName "SFMC-MCP-TokenRefresh"
+```
+
+### Manually re-authenticate (if token expires and task fails)
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\sfmc-refresh.ps1"
+```
+
+---
+
+## 9. How Authentication Works (Flow Summary)
+
+```
+1. sfmc-refresh.ps1 runs (every 15 min via Scheduled Task)
+       |
+2. Registers a new OAuth client via Dynamic Client Registration
+       |
+3. Generates PKCE code_verifier + code_challenge (SHA256/S256)
+       |
+4. Starts HTTP listener on localhost:54321
+       |
+5. Opens browser to MCP /authorize endpoint
+       |
+6. MCP server redirects to SFMC login (mc.login.exacttarget.com)
+       | (if SFMC session active → auto-completes, no manual login needed)
+       |
+7. SFMC redirects back to MCP server callback
+       |
+8. MCP server redirects to localhost:54321/callback?code=...
+       |
+9. Script captures code, exchanges for Bearer token via /token endpoint
+       |
+10. Runs: claude mcp remove salesforce-mcp
+          claude mcp add --transport http salesforce-mcp {URL} --header "Authorization: Bearer {token}"
+       |
+11. MCP server shows: Connected ✅
+```
+
+---
+
+## 10. Important Notes
+
+- **Token expires in ~18 min** — the scheduled task runs every 15 min to stay ahead of expiry
+- **Browser opens briefly** during each refresh — it auto-closes once the callback is captured
+- **SFMC session must be active** in the browser for silent refresh — if SFMC session expires, manual login will be required
+- **The `dvxb12q0kyivon1gl7373aie`** in the MCP URL is a routing identifier, NOT the OAuth client ID used during token exchange (a new client is dynamically registered each refresh)
+- **Client credentials flow was tested and failed** — the public package only supports Authorization Code + PKCE
+- **MCP server config is project-scoped** — only applies to the `MC MCP POC` project directory
+- **OAuth callback port** — refresh script uses `localhost:54322` (port `54321` was stuck on machine)
+
+---
+
+## 11. SFMC REST API Quirks Discovered (`/data/v1/customobjects`)
+
+These three undocumented quirks caused multiple failures before we cracked them:
+
+### 11.1 Use `length`, NOT `maxLength`
+Field property for Text/EmailAddress field length is `length` — not `maxLength`.
+
+```json
+{ "name": "SubscriberKey", "type": "Text", "length": 100, "isPrimaryKey": true }
+```
+
+Wrong: `"maxLength": 100` → returns `"A text field with no length specified cannot be used as a primary key"` (misleading — the field DOES have length, just under the wrong property name).
+
+### 11.2 EmailAddress type REQUIRES explicit `length`
+The API error `"Length is invalid for field EmailAddress because it does not have a data type of Text"` is misleading — it actually means the OPPOSITE: length is **required**, not forbidden.
+
+```json
+{ "name": "EmailAddress", "type": "EmailAddress", "length": 254 }   // ✅ works
+{ "name": "EmailAddress", "type": "EmailAddress" }                  // ❌ fails
+{ "name": "EmailAddress", "type": "EmailAddress", "length": null }  // ❌ fails
+{ "name": "EmailAddress", "type": "EmailAddress", "length": 0 }     // ❌ 500 Internal Server Error
+{ "type": "Email" }                                                 // ❌ "fieldType is invalid: Email"
+```
+
+### 11.3 `sendableSubscriberField` must be a string in PATCH (not an object)
+The natural-looking object form throws a deserialization error. PATCH after creating the DE with `isSendable: false`.
+
+```json
+// PATCH body — works
+{
+  "isSendable": true,
+  "sendableCustomObjectField": "SubscriberKey",
+  "sendableSubscriberField": "Subscriber Key"
+}
+
+// Object forms — FAIL with "JSON Deserialization Exception: ... sendableSubscriberField"
+{ "sendableSubscriberField": { "name": "Subscriber Key" } }
+```
+
+Note: `sendableDataExtensionField` (object form) also works for the DE-side field, but `sendableCustomObjectField` (string) is the canonical name returned by GET.
+
+### 11.4 Required field properties (all booleans, all required on every field)
+```
+isTemplateField, isHidden, isOverridable, isInheritable, isReadOnly, mustOverride, isNullable
+```
+Plus: `name`, `type`, `ordinal`. Plus `length` if the type accepts length.
+
+### 11.5 categoryId is required
+Look it up via `/email/v1/categories?$filter=categorytype eq 'dataextension'` or use the root DE folder ID. Walk the tree with `parentCatId` to build a path.
+
+---
+
+## 12. Data Extensions Created During POC
+
+| Name | ID | Key | Folder | Sendable |
+|---|---|---|---|---|
+| `TestSubscribers` | `866ead53-5a58-f111-a5bd-5cba2c7ae570` | `4C07937B-62E4-4060-B108-5BC169AD4139` | Data Extensions › Swetha Test (catId 723391) | ✅ SubscriberKey → Subscriber Key |
+| `MCP TEST` | `3a183376-6a58-f111-a5bd-5cba2c7ae570` | `5C7C2D77-38EB-454D-9DCD-6AFFF046DF39` | Data Extensions (root, catId 644897) | ✅ SubscriberKey → Subscriber Key |
+
+Both have identical schema:
+| Field | Type | Length | PK |
+|---|---|---|---|
+| SubscriberKey | Text | 100 | ✅ |
+| EmailAddress | EmailAddress (native, on MCP TEST) / Text (on TestSubscribers) | 254 | — |
+| FirstName | Text | 50 | — |
+| LastName | Text | 50 | — |
+| CreatedDate | Date | — | — |
+
+> `TestSubscribers` was created before we cracked quirk 11.2, so its EmailAddress field is `Text(254)` instead of the native `EmailAddress` type. Functionally equivalent for storage and sending. `MCP TEST` uses the native type.
+
+---
+
+## 13. Reference: Folder Tree Walker
+
+To find the SFMC UI folder path for any DE:
+
+```powershell
+$cur = <categoryId>
+$path = @()
+while ($cur) {
+    $c = Invoke-RestMethod -Method Get `
+        -Uri "$restBase/email/v1/categories/$cur" `
+        -Headers @{ Authorization = "Bearer $token" }
+    $path = ,$c.name + $path
+    if (-not $c.parentCatId -or $c.parentCatId -eq 0) { break }
+    $cur = $c.parentCatId
+}
+$path -join ' > '
+```
+
+Endpoints used:
+- `/email/v1/categories/{id}` — single folder details
+- `/data/v1/customobjects` — Data Extension CRUD
+- `/data/v1/customobjects/{id}/fields` — DE field list
+- `/automation/v1/automations` — automation list (status: `Ready` = active)
+
