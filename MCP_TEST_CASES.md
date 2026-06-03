@@ -23,9 +23,9 @@ This document provides a comprehensive list of test scenarios to validate the SF
 
 #### 1.2 Retrieve Data Extension
 - **Scenario**: Fetch metadata of existing DE
-- **Test DE**: `TestSubscribers` (ID: `866ead53-5a58-f111-a5bd-5cba2c7ae570`)
+- **Test DE**: `TestSubscribers` (ID: `<REDACTED-ID>`)
 - **Expected**: Full DE object with `fieldCount=5`, `isSendable=true`, `sendableCustomObjectField="SubscriberKey"`
-- **Validation**: Correct folder path in categoryId 723391
+- **Validation**: Correct folder path in categoryId <REDACTED-ID>
 
 #### 1.3 Update Data Extension Metadata
 - **Scenario**: Enable sendable on an existing non-sendable DE
@@ -110,11 +110,11 @@ This document provides a comprehensive list of test scenarios to validate the SF
 ### 4. Folder Navigation & Organization
 
 #### 4.1 Walk Folder Tree
-- **Scenario**: Navigate from `TestSubscribers` (catId 723391) to root
+- **Scenario**: Navigate from `TestSubscribers` (catId <REDACTED-ID>) to root
 - **Expected**:
-  - 723391 → "Swetha Test"
-  - 723391.parentCatId = 644897 → "Data Extensions"
-  - 644897.parentCatId = 0 (root)
+  - <REDACTED-ID> → "Swetha Test"
+  - <REDACTED-ID>.parentCatId = <REDACTED-ID> → "Data Extensions"
+  - <REDACTED-ID>.parentCatId = 0 (root)
 - **Validation**: Path = "Data Extensions › Swetha Test"
 - **Endpoint**: `/email/v1/categories/{id}`
 
@@ -126,7 +126,7 @@ This document provides a comprehensive list of test scenarios to validate the SF
 #### 4.3 Find DE by Category
 - **Scenario**: List all DEs in "Swetha Test" folder
 - **Expected**: `TestSubscribers` appears in that folder
-- **Validation**: categoryId 723391 contains TestSubscribers
+- **Validation**: categoryId <REDACTED-ID> contains TestSubscribers
 
 ---
 
@@ -245,7 +245,7 @@ This document provides a comprehensive list of test scenarios to validate the SF
 - **Scenario**: Verify MCP config persists in `~/.claude.json`
 - **Expected**: `mcpServers.salesforce-mcp` entry exists with:
   - `type: "http"`
-  - `url: "https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/..."`
+  - `url: "https://<MCP_HOST>/..."`
   - `headers.Authorization: "Bearer eyJ..."`
 - **Validation**: Config format matches project requirements
 

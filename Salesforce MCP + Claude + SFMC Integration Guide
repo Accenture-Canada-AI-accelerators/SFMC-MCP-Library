@@ -22,7 +22,7 @@ Scope	The integration is scoped at the project level and is active only within t
 •	Navigate to SFMC Setup → Apps → Installed Packages and open your package
 •	Record the following values:
 Endpoint	Format
-MCP URL	https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/t/<TENANT_ID>/c/<ROUTING_ID>/api/mcp
+MCP URL	https://<MCP_HOST>/t/<TENANT_ID>/c/<ROUTING_ID>/api/mcp
 REST Base	https://<TENANT_ID>.rest.marketingcloudapis.com
 Auth Base	https://<TENANT_ID>.auth.marketingcloudapis.com
 SFMC Login	https://mc.login.exacttarget.com/hub-cas/login

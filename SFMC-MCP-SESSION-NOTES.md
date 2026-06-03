@@ -8,9 +8,9 @@
 
 | Field | Value |
 |---|---|
-| **MCP Endpoint** | `https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/t/mcfl8qnsz4yp5b6zc2q3d11y0qty/c/dvxb12q0kyivon1gl7373aie/api/mcp` |
-| **Tenant ID** | `mcfl8qnsz4yp5b6zc2q3d11y0qty` |
-| **Client ID (MCP URL)** | `dvxb12q0kyivon1gl7373aie` |
+| **MCP Endpoint** | `https://<MCP_HOST>/t/<TENANT>/c/<MCP_ROUTING_ID>/api/mcp` |
+| **Tenant ID** | `<TENANT>` |
+| **Client ID (MCP URL)** | `<MCP_ROUTING_ID>` |
 | **Transport** | HTTP |
 | **Server name in Claude** | `salesforce-mcp` |
 | **Scope** | Local (project-level) — `MC MCP POC` project only |
@@ -21,11 +21,11 @@
 
 | API | URL |
 |---|---|
-| **REST Base URL** | `https://mcfl8qnsz4yp5b6zc2q3d11y0qty.rest.marketingcloudapis.com` |
-| **Auth Base URL** | `https://mcfl8qnsz4yp5b6zc2q3d11y0qty.auth.marketingcloudapis.com` |
+| **REST Base URL** | `https://<TENANT>.rest.marketingcloudapis.com` |
+| **Auth Base URL** | `https://<TENANT>.auth.marketingcloudapis.com` |
 | **SFMC Login** | `https://mc.login.exacttarget.com/hub-cas/login` |
-| **Stack** | S7 (`mc.s7.exacttarget.com`) |
-| **Enterprise ID** | `7281705` |
+| **Stack** | S7 (`<SOAP_HOST>`) |
+| **Enterprise ID** | `<EID>` |
 
 ---
 
@@ -39,7 +39,7 @@
 | **Registration Endpoint** | `{MCP_URL}/register` |
 | **Authorization Endpoint** | `{MCP_URL}/authorize` |
 | **Token Endpoint** | `{MCP_URL}/token` |
-| **Protected Resource Metadata** | `https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/.well-known/oauth-protected-resource/t/mcfl8qnsz4yp5b6zc2q3d11y0qty/c/dvxb12q0kyivon1gl7373aie/api/mcp` |
+| **Protected Resource Metadata** | `https://<MCP_HOST>/.well-known/oauth-protected-resource/t/<TENANT>/c/<MCP_ROUTING_ID>/api/mcp` |
 | **Auth Server Metadata** | `{AUTH_SERVER}/.well-known/oauth-authorization-server` |
 | **Token Expiry** | ~1079 seconds (~18 minutes) |
 | **Refresh Token** | NOT supported |
@@ -51,7 +51,7 @@
 | Field | Value |
 |---|---|
 | **Package Type** | Public (no client secret) |
-| **OAuth Client ID** | `dvxb12q0kyivon1gl7373aie` |
+| **OAuth Client ID** | `<MCP_ROUTING_ID>` |
 | **Client Secret** | None (public package) |
 | **Grant Type in Package** | Authorization Code |
 | **Location** | SFMC Setup → Apps → Installed Packages |
@@ -154,7 +154,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\sfmc-refresh.
 - **Token expires in ~18 min** — the scheduled task runs every 15 min to stay ahead of expiry
 - **Browser opens briefly** during each refresh — it auto-closes once the callback is captured
 - **SFMC session must be active** in the browser for silent refresh — if SFMC session expires, manual login will be required
-- **The `dvxb12q0kyivon1gl7373aie`** in the MCP URL is a routing identifier, NOT the OAuth client ID used during token exchange (a new client is dynamically registered each refresh)
+- **The `<MCP_ROUTING_ID>`** in the MCP URL is a routing identifier, NOT the OAuth client ID used during token exchange (a new client is dynamically registered each refresh)
 - **Client credentials flow was tested and failed** — the public package only supports Authorization Code + PKCE
 - **MCP server config is project-scoped** — only applies to the `MC MCP POC` project directory
 - **OAuth callback port** — refresh script uses `localhost:54322` (port `54321` was stuck on machine)
@@ -217,8 +217,8 @@ Look it up via `/email/v1/categories?$filter=categorytype eq 'dataextension'` or
 
 | Name | ID | Key | Folder | Sendable |
 |---|---|---|---|---|
-| `TestSubscribers` | `866ead53-5a58-f111-a5bd-5cba2c7ae570` | `4C07937B-62E4-4060-B108-5BC169AD4139` | Data Extensions › Swetha Test (catId 723391) | ✅ SubscriberKey → Subscriber Key |
-| `MCP TEST` | `3a183376-6a58-f111-a5bd-5cba2c7ae570` | `5C7C2D77-38EB-454D-9DCD-6AFFF046DF39` | Data Extensions (root, catId 644897) | ✅ SubscriberKey → Subscriber Key |
+| `TestSubscribers` | `<REDACTED-ID>` | `<REDACTED-ID>` | Data Extensions › Swetha Test (catId <REDACTED-ID>) | ✅ SubscriberKey → Subscriber Key |
+| `MCP TEST` | `<REDACTED-ID>` | `<REDACTED-ID>` | Data Extensions (root, catId <REDACTED-ID>) | ✅ SubscriberKey → Subscriber Key |
 
 Both have identical schema:
 | Field | Type | Length | PK |

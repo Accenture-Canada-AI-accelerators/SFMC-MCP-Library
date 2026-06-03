@@ -1,7 +1,7 @@
 # MCP Onboarding Campaign — Build Summary & UI Runbook
 
 **Brand:** Northbridge Financial (fictional Financial Services)
-**Built:** 2026-06-03 · via SFMC REST API · Business Unit EID 7281705
+**Built:** 2026-06-03 · via SFMC REST API · Business Unit EID <EID>
 **Status:** All components built & verified. Two actions remain — both **UI-only** (see Part B).
 
 ---
@@ -20,22 +20,22 @@
 | NB-1005 | Sophie | Turner | sophie.turner@example.com | 3.75% |
 
 ### Phase 2 — Automation Studio filter
-- **Target DE:** `MCP Onboarding Audience` — id `d5d78e2a-585f-f111-a5bd-5cba2c7ae570`, key `1d2c097d-9eb1-4920-9253-8db91f6812d7` (**non-sendable** by design — see note 1).
-- **SQL activity:** `MCP Onboarding - Filter Engaged` — id `90e03fa0-d9e5-4719-8198-5d5bd8b4ded6`. Overwrite. Logic: select MCP TEST records in the onboarding cohort (`SubscriberKey LIKE 'NB-%'`) **and** that did **NOT open or click** in the last 30 days → write to the audience DE. (The `NB-%` guard keeps stray/test rows like `TEST_0001` out of the audience on every Run Once.)
-- **Automation:** `MCP Onboarding Prep` — id `afa2f5fa-4a61-494f-a93b-08ec3bfdf1ca`, status **Ready**, Step 1 = the SQL activity (verified via read-back).
+- **Target DE:** `MCP Onboarding Audience` — id `<REDACTED-ID>`, key `<REDACTED-ID>` (**non-sendable** by design — see note 1).
+- **SQL activity:** `MCP Onboarding - Filter Engaged` — id `<REDACTED-ID>`. Overwrite. Logic: select MCP TEST records in the onboarding cohort (`SubscriberKey LIKE 'NB-%'`) **and** that did **NOT open or click** in the last 30 days → write to the audience DE. (The `NB-%` guard keeps stray/test rows like `TEST_0001` out of the audience on every Run Once.)
+- **Automation:** `MCP Onboarding Prep` — id `<REDACTED-ID>`, status **Ready**, Step 1 = the SQL activity (verified via read-back).
 
-### Phase 3 — Email assets (Content Builder → folder `MCP Onboarding`, id 950113)
+### Phase 3 — Email assets (Content Builder → folder `MCP Onboarding`, id <REDACTED-ID>)
 | Email | Asset id | Role |
 |---|---|---|
-| NB Onboarding - 1 Welcome | 1461876 | Touchpoint 1 (all entrants) |
-| NB Onboarding - 2 Getting Started | 1461877 | Engaged branch |
-| NB Onboarding - 3 Nudge | 1461878 | Not-engaged branch |
+| NB Onboarding - 1 Welcome | <REDACTED-ID> | Touchpoint 1 (all entrants) |
+| NB Onboarding - 2 Getting Started | <REDACTED-ID> | Engaged branch |
+| NB Onboarding - 3 Nudge | <REDACTED-ID> | Not-engaged branch |
 
 All three: original copy, navy/gold Northbridge brand, `FirstName` AMPScript personalization with `"there"` fallback.
 
 ### Phase 3 — Journey (Draft)
-`MCP Onboarding Journey` — id `34132867-c39a-49e4-a1ff-ffbbf5a9a1dc`, key `mcp-onboarding-d6901d66`.
-Entry event definition: `DEAudience-e38dc154-c959-4a50-acd4-a6a2511e7d41`.
+`MCP Onboarding Journey` — id `<REDACTED-ID>`, key `mcp-onboarding-d6901d66`.
+Entry event definition: `DEAudience-<REDACTED-ID>`.
 
 ```
 [Entry: Data Extension = MCP Onboarding Audience]
@@ -100,10 +100,10 @@ WHERE NOT EXISTS (SELECT 1 FROM [_Open]  o WHERE o.SubscriberKey = m.SubscriberK
 ## Reference IDs
 | Object | id / key |
 |---|---|
-| MCP TEST DE | `3a183376-6a58-f111-a5bd-5cba2c7ae570` / `5C7C2D77-38EB-454D-9DCD-6AFFF046DF39` |
-| MCP Onboarding Audience DE | `d5d78e2a-585f-f111-a5bd-5cba2c7ae570` / `1d2c097d-9eb1-4920-9253-8db91f6812d7` |
-| SQL activity | `90e03fa0-d9e5-4719-8198-5d5bd8b4ded6` |
-| Automation | `afa2f5fa-4a61-494f-a93b-08ec3bfdf1ca` |
-| Email assets | Welcome 1461876 · Getting Started 1461877 · Nudge 1461878 |
-| Journey | `34132867-c39a-49e4-a1ff-ffbbf5a9a1dc` / `mcp-onboarding-d6901d66` |
-| Entry event def | `DEAudience-e38dc154-c959-4a50-acd4-a6a2511e7d41` |
+| MCP TEST DE | `<REDACTED-ID>` / `<REDACTED-ID>` |
+| MCP Onboarding Audience DE | `<REDACTED-ID>` / `<REDACTED-ID>` |
+| SQL activity | `<REDACTED-ID>` |
+| Automation | `<REDACTED-ID>` |
+| Email assets | Welcome <REDACTED-ID> · Getting Started <REDACTED-ID> · Nudge <REDACTED-ID> |
+| Journey | `<REDACTED-ID>` / `mcp-onboarding-d6901d66` |
+| Entry event def | `DEAudience-<REDACTED-ID>` |

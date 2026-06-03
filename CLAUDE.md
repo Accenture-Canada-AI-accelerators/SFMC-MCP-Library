@@ -10,9 +10,9 @@ See `SFMC-MCP-SESSION-NOTES.md` for full details. Quick reference below.
 ## Environment
 
 - **MCP server**: `salesforce-mcp` (HTTP transport, project-scoped)
-- **MCP endpoint**: `https://mai-mce-mcp-cdp1.sfdc-yfeipo.svc.sfdcfc.net/t/mcfl8qnsz4yp5b6zc2q3d11y0qty/c/dvxb12q0kyivon1gl7373aie/api/mcp`
-- **REST base**: `https://mcfl8qnsz4yp5b6zc2q3d11y0qty.rest.marketingcloudapis.com`
-- **Stack**: S7 (`mc.s7.exacttarget.com`), Enterprise ID `7281705`
+- **MCP endpoint**: `https://<MCP_HOST>/t/<TENANT>/c/<MCP_ROUTING_ID>/api/mcp`
+- **REST base**: `https://<TENANT>.rest.marketingcloudapis.com`
+- **Stack**: S7 (`<SOAP_HOST>`), Enterprise ID `<EID>`
 - **Auth**: OAuth 2.0 Authorization Code + PKCE (public package, no client secret)
 - **Token TTL**: ~18 min — refresh script runs every 15 min via Windows Scheduled Task `\ClaudeCode\SFMC-MCP-TokenRefresh`
 - **Refresh script**: `C:\Users\harsh.f.patel\.claude\sfmc-refresh.ps1` (OAuth callback port `54322`)
@@ -70,8 +70,8 @@ Use `/email/v1/categories/{id}` to look up folders. Walk with `parentCatId` to b
 
 | Name | ID | Folder |
 |---|---|---|
-| `TestSubscribers` | `866ead53-5a58-f111-a5bd-5cba2c7ae570` | Data Extensions › Swetha Test (catId 723391) |
-| `MCP TEST` | `3a183376-6a58-f111-a5bd-5cba2c7ae570` | Data Extensions (root, catId 644897) |
+| `TestSubscribers` | `<REDACTED-ID>` | Data Extensions › Swetha Test (catId <REDACTED-ID>) |
+| `MCP TEST` | `<REDACTED-ID>` | Data Extensions (root, catId <REDACTED-ID>) |
 
 Both: `SubscriberKey`(Text,100,PK) · `EmailAddress`(254) · `FirstName`(Text,50) · `LastName`(Text,50) · `CreatedDate`(Date) · Sendable: `SubscriberKey → Subscriber Key`.
 

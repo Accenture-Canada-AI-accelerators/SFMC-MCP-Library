@@ -1,7 +1,7 @@
 # Journey Configuration Specification: MCP TEST
 
 ## Overview
-This document describes the `MCP TEST` journey design. It was created programmatically via the **Journey Builder REST API** (`POST /interaction/v1/interactions`) — journey id `f0341bae-fed1-44a2-897e-5e2bfa292d2e`, status `Draft`. Note: SOAP does NOT support journeys (HTTP 500); REST is the correct path. The UI steps below remain useful for assigning real email assets before publishing. See `JOURNEY-CREATION-FINDINGS.md` for the API details.
+This document describes the `MCP TEST` journey design. It was created programmatically via the **Journey Builder REST API** (`POST /interaction/v1/interactions`) — journey id `<REDACTED-ID>`, status `Draft`. Note: SOAP does NOT support journeys (HTTP 500); REST is the correct path. The UI steps below remain useful for assigning real email assets before publishing. See `JOURNEY-CREATION-FINDINGS.md` for the API details.
 
 ## Design Specification
 

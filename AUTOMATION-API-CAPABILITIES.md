@@ -2,7 +2,7 @@
 
 What works and what doesn't when managing **Automation Studio** (and the SQL activities inside it) via the SFMC REST/SOAP APIs. Every entry below was verified against the live tenant by reading the actual result (SOAP `<OverallStatus>` / REST read-back), **not** just the HTTP status code.
 
-Tenant: `mcfl8qnsz4yp5b6zc2q3d11y0qty` · Stack S7 · EID 7281705
+Tenant: `<TENANT>` · Stack S7 · EID <EID>
 Last verified: 2026-06-01
 
 ---
@@ -36,11 +36,11 @@ POST /automation/v1/queries
   "description": "...",
   "queryText": "SELECT SubscriberKey, EmailAddress, FirstName, LastName, CreatedDate, Rate FROM [MCP TEST]",
   "targetName": "MCP TEST",
-  "targetKey": "5C7C2D77-38EB-454D-9DCD-6AFFF046DF39",
-  "targetId": "3a183376-6a58-f111-a5bd-5cba2c7ae570",   // DE ObjectID (same as /customobjects/{id})
+  "targetKey": "<REDACTED-ID>",
+  "targetId": "<REDACTED-ID>",   // DE ObjectID (same as /customobjects/{id})
   "targetDescription": "MCP TEST DE",
   "targetUpdateTypeId": 1,                                // 0=Overwrite, 1=Update, 2=Append
-  "categoryId": 644899                                    // a Query Activities folder id
+  "categoryId": <REDACTED-ID>                                    // a Query Activities folder id
 }
 ```
 
@@ -132,7 +132,7 @@ So the earlier "needs publish / UI-only" conclusion was WRONG. **To build a full
 ---
 
 ## Reference IDs (this tenant)
-- **MCP Test** automation — id `cb5b294b-5a07-4f52-8a06-4c32cb72cb94`, key `510e4095-700a-4bdf-8f2d-0f9776850cc1` (has SQL activity in Step 1; not runnable via API)
-- **MCP Test SQL** query activity — id `b79260a1-9c81-4508-bac7-9d5276d497e5` (Update on MCP TEST)
-- **MCP TEST** DE — id `3a183376-6a58-f111-a5bd-5cba2c7ae570`, key `5C7C2D77-38EB-454D-9DCD-6AFFF046DF39`, sendable (SubscriberKey → "Subscriber Key")
-- Query Activities folder categoryId: `644899`
+- **MCP Test** automation — id `<REDACTED-ID>`, key `<REDACTED-ID>` (has SQL activity in Step 1; not runnable via API)
+- **MCP Test SQL** query activity — id `<REDACTED-ID>` (Update on MCP TEST)
+- **MCP TEST** DE — id `<REDACTED-ID>`, key `<REDACTED-ID>`, sendable (SubscriberKey → "Subscriber Key")
+- Query Activities folder categoryId: `<REDACTED-ID>`

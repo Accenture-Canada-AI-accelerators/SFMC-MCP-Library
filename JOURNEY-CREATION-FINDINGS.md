@@ -7,7 +7,7 @@
 - ❌ **SOAP API**: `Journey`/`Interaction` objects are not supported. Both Create and Retrieve return HTTP 500. SOAP is the wrong tool for journeys.
 - ✅ **REST API**: `POST /interaction/v1/interactions` (REST base URL, NOT the MCP bridge) with a properly-structured JSON activity graph creates a Draft journey successfully.
 
-A multi-step journey (`MCP TEST`, id `f0341bae-fed1-44a2-897e-5e2bfa292d2e`) was created this way with: Entry → Email 1 → Decision (FirstName starts with H) → Wait 2 Weeks → Email 2.
+A multi-step journey (`MCP TEST`, id `<REDACTED-ID>`) was created this way with: Entry → Email 1 → Decision (FirstName starts with H) → Wait 2 Weeks → Email 2.
 
 > An earlier draft of this document wrongly concluded journeys were uncreatable. That conclusion came from testing the **MCP bridge URL** with a **minimal `{name,key,description}` payload** — both wrong. The fix: hit the REST base directly with the full Journey Builder schema.
 
