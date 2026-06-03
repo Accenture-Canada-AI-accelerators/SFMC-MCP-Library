@@ -332,6 +332,37 @@ This document provides a comprehensive list of test scenarios to validate the SF
 
 ---
 
+## Lessons Learned — Campaign Automation Build (2026-06-03)
+
+Built an end-to-end email onboarding journey programmatically (seed Data Extension → filter automation → 3 Content Builder emails → Draft journey with an engagement split). Verified lessons:
+
+### API can *build*, but not *run* / *activate*
+- **Automations:** you can create an automation and wire a SQL Query activity (`objectTypeId 300`) via REST, but you **cannot trigger a run** — "Run Once" is UI-only. The start endpoint fails with *"automation type: unspecified is not valid to be used in run once"*, and SOAP `Perform` (start) on the underlying `QueryDefinition` returns `InvalidRequest` (`Schedule::Start`).
+- **Journeys:** REST creates a **Draft** only; activation/publish is UI-only.
+- Plan for this: build everything to "ready" via API, then hand off a runbook for the two UI clicks.
+
+### Data Extensions & SQL
+- **Insert rows:** `POST /hub/v1/dataevents/key:{deKey}/rowset` with `[{ "keys": {…PK…}, "values": {…} }]` (async upsert).
+- **Read rows back:** SOAP `Retrieve` on `DataExtensionObject[<Name>]` — the REST `/data/v1/customobjects/{id}/rowset` GET is **404**.
+- A SQL activity whose **target is a sendable DE** fails (*"could not build exclusion text…"*) → target a **non-sendable** DE.
+- Add a cohort guard (e.g. `WHERE SubscriberKey LIKE 'NB-%'`) so stray/test rows never enter the audience.
+
+### Journey Builder (REST)
+- DE entry source needs an **event definition** (`type: "EmailAudience"`), then the trigger references its `eventDefinitionId`/`eventDefinitionKey`.
+- Decision/engagement-split fields only resolve when the journey has **`metaData.dataSource = "ContactsModel"`**.
+- **Engagement split** = activity type **`ENGAGEMENTDECISION`** (outcomes carry `arguments.when: true/false`; config carries `refActivityCustomerKey` + `statsTypeId`, plus `engagementUrls` for click-based). **Mirror an existing live tile** rather than constructing blind.
+- Journey **`description` rejects** any of `& < > " ' /` (errorcode `121072`).
+
+### Auth / token mechanics
+- The MCP OAuth refresh yields an **`mcpt-` bridge token** that works for MCP tools but **401s on the raw REST API**; the REST-usable platform JWT is the **4-segment** token embedded inside the wrapper.
+- Token TTL ≈ **18 min** — refresh immediately before a build and batch all writes inside the window.
+- The refresh script must **auto-detect the current CLI version path** — a hard-coded version silently breaks token persistence after a CLI update.
+
+### Process that worked
+**Brief → map to objects → build (verify every read-back) → hand off a runbook** for the UI-only run/activate steps. See `CAMPAIGN-DESIGN-NOTES.md` and `MCP-Onboarding-Campaign-Runbook.md` for the full write-up, and `SFMC-Campaign-Brief-Template.xlsx` for the reusable intake template.
+
+---
+
 ## Success Criteria
 
 ✅ **All test cases pass** if:
