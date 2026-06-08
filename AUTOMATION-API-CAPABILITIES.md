@@ -71,6 +71,8 @@ PATCH /automation/v1/automations/{automationId}
 | **Overwrite query reading + writing the *same* DE** | **"Update Type must be 'Update' or the target data extension cannot appear in the query."** Same-source-and-target requires Update. |
 | **Inline SQL inside an Automation object** (SOAP `<Activities><SQLStatement>…`) | Returns HTTP 200 but is **silently discarded** — no real activity is created. (Source of an earlier false "success" — never use this pattern.) |
 | **Create SQL activity via SOAP `QueryDefinition`** | Generic `CreateQueryDefinition` exception (ErrorID). Use the REST `/automation/v1/queries` endpoint instead. |
+| **SQL Query Activity with a CTE (`WITH …`)** | **400** "Error saving the Query field. Only SELECT queries are valid. Select must be the first word of the query." → rewrite with **nested derived tables**; the statement must start with `SELECT`. |
+| **Automation PATCH with >1 step OR >1 activity per step** | Multi-**step** payload → **500** (Internal Server Error); two activities in one step → **400**. Only **one single-step, single-activity** automation per PATCH works reliably. Make queries **self-contained** (read the source DE, no inter-step dependency) and use a separate single-step automation each. |
 
 ### Workaround used for sendable-DE Update (with caveats)
 To create an Update SQL activity whose target is a sendable DE:
@@ -91,6 +93,9 @@ Caveats: mutates a production DE; may briefly affect anything using it (e.g. a j
 - **REST automation *list* is unreliable** here (`GET /automation/v1/automations` returned 0). Read by id, or use SOAP `Program` for names.
 - **Field lists:** `GET /data/v1/customobjects/{id}/fields` works (parse the `.fields[]` array). SOAP `DataExtensionField` retrieve **500s** when you include certain properties (e.g. `CategoryID`) or a filter.
 - **Mirror, don't guess:** for query activities, `GET` an existing one to copy the exact field shape (required `categoryId`, `targetId`, update-type ids) rather than guessing the schema.
+- **SMS / MobileConnect via API:** the keyword endpoint (`/legacy/v1/beta/mobile/keyword/`) returns **403** when SMS isn't provisioned / the package lacks scope — SMS *send* activities can't be built or sent via API. Deliver the SMS copy and treat the send as UI-only.
+- **Token persistence:** the MCP refresh can leave a **stale token** in `.claude.json` (config write via `claude mcp add` is unreliable). Dump the raw token to a file on refresh and read that first; an `mcpt-` bridge token must be unwrapped to its inner 4-segment JWT for REST.
+- **Reusable build library:** these endpoints + quirks are wrapped in `~/.claude/sfmc.py` (`create_de`, `seed_rows`, `soap_count`, `create_query`, `create_automation`, `create_email`, `event_definition`, `build_journey`, …) — orchestrate with those rather than re-deriving payloads.
 
 ---
 
