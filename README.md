@@ -157,3 +157,22 @@ A structured validation suite (DE CRUD, field ops, sendable config, folder navig
 ---
 
 *Maintained as an Accenture Canada AI Accelerators knowledge asset. Identifiers are redacted — bring your own SFMC instance configuration.*
+
+
+Claude Code $$$$
+- Approx $8 USD on Enterprise License 
+- Opus 4.8 base input rate is $5/MTok, so:
+1.Cache read: 33.6M tokens × $0.50/MTok = ~$16.80
+2.Cache write: 2.2M tokens × $6.25/MTok = ~$13.75
+- Haiku 4.5 base input rate is $1/MTok, so:
+1.Cache read: 10.8M tokens × $0.10/MTok = ~$1.08
+  
+
+ 
+
+ 
+
+
+
+ 
+
