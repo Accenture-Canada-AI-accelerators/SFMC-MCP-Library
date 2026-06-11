@@ -23,9 +23,9 @@ It contains three things:
 | Area | What's covered |
 |------|----------------|
 | **Data Extensions** | CRUD, field operations, sendable configuration (two-step create + PATCH), SOAP field mutation |
-| **Automation Studio** | Build automations + SQL Query activities via REST; documented run/activation limits |
-| **Content Builder** | HTML + AMPScript email assets with personalization |
-| **Journey Builder** | DE-entry event definitions, decision/engagement splits, full journey graphs (Draft) |
+| **Automation Studio** | Build **multi-step** automations (ordered SQL Query steps, zero-based `stepNumber`) via REST; SOAP delete; run/activation is UI-only |
+| **Content Builder** | HTML + AMPScript email assets with personalization; **upload + host images** (hero/logo) via the asset API → CDN URLs |
+| **Journey Builder** | DE-entry events; decision / engagement / **random splits** (control holdout); timed **waits** (min/hour/day); full journey graphs (Draft) |
 | **Monitoring** | Live dashboard across DEs, automations, journeys, content, and engagement data views |
 | **Auth** | OAuth (Auth-Code + PKCE) refresh mechanics and the MCP-bridge-vs-REST token distinction |
 
@@ -140,13 +140,18 @@ flowchart TB
 ## Key lessons (the short version)
 
 - **API can build, but not run/activate** — automation Run Once and journey publish are UI-only (the start endpoints reject; SOAP `Perform` returns `InvalidRequest`).
+- **Multi-step automations DO build via API** — the *write* field is `stepNumber` and must be **zero-based**; the *read-back* field is `step` (1-based). Sending `step` (or 1-based) → opaque **500** on PATCH / clear **400** on POST. (The earlier "single-step only" note was a client-side bug.)
+- **Control via journey Random Split** — `RANDOMSPLIT` outcomes carry `arguments.percentage` (must sum to 100); the control branch omits `next` to hold contacts out. `WAIT` supports `MINUTES/HOURS/DAYS/WEEKS`.
 - **Target non-sendable DEs for SQL** — a sendable target throws *"could not build exclusion text."*
 - **Journeys need `metaData.dataSource = "ContactsModel"`** for decision/engagement-split fields to resolve.
-- **Read rows via SOAP `Retrieve`** — the REST DE rowset GET returns 404.
+- **Read rows via SOAP `Retrieve`, parse per `<Property>`** — the REST DE rowset GET returns 404; SFMC omits `<Value>` for null fields, so a flat name/value regex silently drops values on multi-field reads.
 - **SOAP returns HTTP 200 even on failure** — always parse `<OverallStatus>`, trust the read-back not the status code.
+- **Token expiry differs by API** — REST → **401**, SOAP → **HTTP 500**; tokens last ~18 min, so batch live calls inside the window.
+- **Delete automations via SOAP** (`Delete` ObjectType `Automation`) — REST `DELETE` 404s.
+- **Host email images via the asset API** — upload PNG/JPG (base64) → published CDN URL; reference that, not an external placeholder.
 - **Watch the misleading errors** — e.g. `length` vs `maxLength`, `EmailAddress` requiring explicit `length`.
 
-Full detail in [`AUTOMATION-API-CAPABILITIES.md`](AUTOMATION-API-CAPABILITIES.md) and [`CAMPAIGN-DESIGN-NOTES.md`](CAMPAIGN-DESIGN-NOTES.md).
+Full detail (updated 2026-06-11) in [`AUTOMATION-API-CAPABILITIES.md`](AUTOMATION-API-CAPABILITIES.md) and [`CAMPAIGN-DESIGN-NOTES.md`](CAMPAIGN-DESIGN-NOTES.md).
 
 ---
 
