@@ -14,10 +14,11 @@
 *.swp
 *.swo
 
-# OS
+# OS / Office temp
 .DS_Store
 Thumbs.db
 *.log
+~$*
 
 # Temporary files
 *.tmp
@@ -30,11 +31,11 @@ Thumbs.db
 *.dll
 *.exe
 
-# Node/npm (if used)
+# Node/npm
 node_modules/
 package-lock.json
 
-# Python (if used)
+# Python
 __pycache__/
 *.pyc
 .venv/
@@ -42,3 +43,17 @@ __pycache__/
 # Local development
 .env.local
 *.local.json
+
+# --- Excluded from this public repo (confidential / unrelated / tenant-specific) ---
+# Separate Salesforce DX project + its generated cache
+SFMC/
+.sfdx/
+# Real campaign briefs (only the generic template is published)
+Inputs/Campaign_Brief_POC1_Gatorade.xlsx
+Inputs/Campaign_Brief_POC_ClaudeCode.xlsx
+# Campaign build folders contain live tenant object IDs / asset URLs
+gatorade-abandoned-cart/
+mortgage-autorenewal-campaign/
+**/MAR-Campaign-Runbook.md
+# Internal creative asset names
+**/SFMC_Asset_Inventory.pdf

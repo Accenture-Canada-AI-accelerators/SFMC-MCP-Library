@@ -108,30 +108,40 @@ flowchart TB
     end
 ```
 
-📐 Full diagrams + design rationale: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+📐 Full diagrams + design rationale: [`ARCHITECTURE.md`](Outputs/ARCHITECTURE.md)
 
 ---
 
 ## Repository map
 
-| File | What it is |
+Organized into knowledge folders:
+
+| Path | What it is |
 |------|------------|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architecture diagrams (Mermaid) + key design decisions |
-| [`AUTOMATION-API-CAPABILITIES.md`](AUTOMATION-API-CAPABILITIES.md) | Verified Automation Studio API reference — what works / what's UI-only |
-| [`CAMPAIGN-DESIGN-NOTES.md`](CAMPAIGN-DESIGN-NOTES.md) | Campaign design rationale + API lessons learned |
-| [`MCP-Onboarding-Campaign-Runbook.md`](MCP-Onboarding-Campaign-Runbook.md) | The worked campaign: built objects + UI run/activate steps |
-| [`JOURNEY-CONFIGURATION-SPEC.md`](JOURNEY-CONFIGURATION-SPEC.md) | Journey configuration specification |
-| [`JOURNEY-CREATION-FINDINGS.md`](JOURNEY-CREATION-FINDINGS.md) | Journey creation findings (REST vs SOAP) |
-| [`MCP_TEST_CASES.md`](MCP_TEST_CASES.md) | Test-case & use-case library for validating the integration |
-| [`SFMC-Campaign-Brief-Template.xlsx`](SFMC-Campaign-Brief-Template.xlsx) | Reusable intake brief that maps 1:1 to SFMC objects |
-| `Salesforce MCP + Claude Code Integration Guide.docx` | Setup & integration guide |
+| **`Automation Memory/`** | |
+| &nbsp;&nbsp;[`AUTOMATION-API-CAPABILITIES.md`](Automation%20Memory/AUTOMATION-API-CAPABILITIES.md) | Verified Automation Studio API reference — what works / what's UI-only |
+| **`Journey Memory/`** | |
+| &nbsp;&nbsp;[`JOURNEY-CONFIGURATION-SPEC.md`](Journey%20Memory/JOURNEY-CONFIGURATION-SPEC.md) | Journey configuration specification |
+| &nbsp;&nbsp;[`JOURNEY-CREATION-FINDINGS.md`](Journey%20Memory/JOURNEY-CREATION-FINDINGS.md) | Journey creation findings (REST vs SOAP) |
+| **`Campaign Designing/`** | |
+| &nbsp;&nbsp;[`CAMPAIGN-DESIGN-NOTES.md`](Campaign%20Designing/CAMPAIGN-DESIGN-NOTES.md) | Campaign design rationale + API lessons learned |
+| &nbsp;&nbsp;[`MCP-Onboarding-Campaign-Runbook.md`](Campaign%20Designing/MCP-Onboarding-Campaign-Runbook.md) | The worked campaign: built objects + UI run/activate steps |
+| **`Outputs/`** | |
+| &nbsp;&nbsp;[`ARCHITECTURE.md`](Outputs/ARCHITECTURE.md) | Architecture diagrams (Mermaid) + key design decisions |
+| &nbsp;&nbsp;[`MCP_TEST_CASES.md`](Outputs/MCP_TEST_CASES.md) | Test-case & use-case library for validating the integration |
+| &nbsp;&nbsp;[`SFMC-MCE-to-MCN-Migration-Research.md`](Outputs/SFMC-MCE-to-MCN-Migration-Research.md) | MCE → Marketing Cloud Next migration research (adversarially verified) |
+| &nbsp;&nbsp;[`SFMC-MCP-SESSION-NOTES.md`](Outputs/SFMC-MCP-SESSION-NOTES.md) | Working session notes |
+| &nbsp;&nbsp;`Salesforce MCP + Claude Code Integration Guide.docx` | Setup & integration guide |
+| **`Inputs/`** | |
+| &nbsp;&nbsp;[`SFMC-Campaign-Brief-Template.xlsx`](Inputs/SFMC-Campaign-Brief-Template.xlsx) | Reusable intake brief that maps 1:1 to SFMC objects |
+| **`Content Memory/` · `Data Extension Memory/`** | Reserved for future content / DE references |
 
 ---
 
 ## Quickstart
 
 1. **Connect.** Refresh the OAuth token (Auth-Code + PKCE). The MCP refresh yields an `mcpt-` *bridge* token valid for MCP tools; the **REST-usable platform JWT is the 4-segment token embedded inside it**. Token TTL ≈ 18 min — refresh immediately before a build and batch writes.
-2. **Build.** Work in phases (Data → Audience + Filter → Content + Journey), reading back and verifying after every write. Mirror an existing live object's JSON rather than guessing. See [`CAMPAIGN-DESIGN-NOTES.md`](CAMPAIGN-DESIGN-NOTES.md) and [`AUTOMATION-API-CAPABILITIES.md`](AUTOMATION-API-CAPABILITIES.md).
+2. **Build.** Work in phases (Data → Audience + Filter → Content + Journey), reading back and verifying after every write. Mirror an existing live object's JSON rather than guessing. See [`CAMPAIGN-DESIGN-NOTES.md`](Campaign%20Designing/CAMPAIGN-DESIGN-NOTES.md) and [`AUTOMATION-API-CAPABILITIES.md`](Automation%20Memory/AUTOMATION-API-CAPABILITIES.md).
 3. **Hand off.** The API builds everything to "ready"; **running an automation (Run Once) and activating a journey are UI-only** — deliver a short runbook for those two clicks.
 4. **Monitor.** Pull a live dashboard across DEs, automations, journeys, content, and 30-day engagement (Sent/Open/Click).
 
@@ -151,13 +161,13 @@ flowchart TB
 - **Host email images via the asset API** — upload PNG/JPG (base64) → published CDN URL; reference that, not an external placeholder.
 - **Watch the misleading errors** — e.g. `length` vs `maxLength`, `EmailAddress` requiring explicit `length`.
 
-Full detail (updated 2026-06-11) in [`AUTOMATION-API-CAPABILITIES.md`](AUTOMATION-API-CAPABILITIES.md) and [`CAMPAIGN-DESIGN-NOTES.md`](CAMPAIGN-DESIGN-NOTES.md).
+Full detail (updated 2026-06-11) in [`AUTOMATION-API-CAPABILITIES.md`](Automation%20Memory/AUTOMATION-API-CAPABILITIES.md) and [`CAMPAIGN-DESIGN-NOTES.md`](Campaign%20Designing/CAMPAIGN-DESIGN-NOTES.md).
 
 ---
 
 ## Test cases
 
-A structured validation suite (DE CRUD, field ops, sendable config, folder navigation, automation/journey querying, error handling, SOAP-vs-REST, performance) lives in [`MCP_TEST_CASES.md`](MCP_TEST_CASES.md).
+A structured validation suite (DE CRUD, field ops, sendable config, folder navigation, automation/journey querying, error handling, SOAP-vs-REST, performance) lives in [`MCP_TEST_CASES.md`](Outputs/MCP_TEST_CASES.md).
 
 ---
 
