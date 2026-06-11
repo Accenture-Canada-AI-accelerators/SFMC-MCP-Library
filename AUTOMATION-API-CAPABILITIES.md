@@ -3,13 +3,13 @@
 What works and what doesn't when managing **Automation Studio** (and the SQL activities inside it) via the SFMC REST/SOAP APIs. Every entry below was verified against the live tenant by reading the actual result (SOAP `<OverallStatus>` / REST read-back), **not** just the HTTP status code.
 
 Tenant: `<TENANT>` · Stack S7 · EID <EID>
-Last verified: 2026-06-01 (+ 2026-06-11: SOAP row-read null-value parsing, REST-401-vs-SOAP-500 expiry, TTL batching)
+Last verified: 2026-06-01 (+ 2026-06-11: **multi-step automations DO work via API** (zero-based `stepNumber`) — corrects a prior wrong "single-step only" claim; SOAP automation delete; SOAP row-read null-value parsing; REST-401-vs-SOAP-500 expiry; TTL batching)
 
 ---
 
 ## TL;DR
 
-- You **can build** an automation end-to-end via API: create the automation shell → create a SQL Query activity → wire it in as a step. And you can manage the DEs it touches.
+- You **can build** a **multi-step** automation end-to-end via API: create SQL Query activities → assemble them as ordered steps in **one** automation (single POST or PATCH). And you can manage the DEs it touches. *(The earlier "single-step only" claim was a bug on my side — see below.)*
 - You **cannot run** an automation via API (Run Once is UI-only — type is immutable).
 - You **cannot create** a SQL Update activity against a **sendable** DE via API (requires a temporary un-sendable workaround, or the UI).
 
@@ -21,10 +21,11 @@ Last verified: 2026-06-01 (+ 2026-06-11: SOAP row-read null-value parsing, REST-
 |---|---|---|
 | Create an automation (shell) | REST `POST /automation/v1/automations` | Returns real id/key, status Ready. |
 | Create a SQL Query activity | REST `POST /automation/v1/queries` | Works **only against a non-sendable target DE**. Requires `categoryId` + `targetId` (the DE ObjectID), `targetKey`, `queryText`, `targetUpdateTypeId`. |
-| Wire a query into an automation as a step | REST `PATCH /automation/v1/automations/{id}` with `steps[].activities[]` (`objectTypeId: 300` = SQL Query, `activityObjectId` = queryDefinitionId) | Read-back confirms the step + activity. |
+| Wire **one or many** queries as ordered steps (single workflow) | REST `POST` with inline `steps[]`, **or** `PATCH /automation/v1/automations/{id}` | **Write field is `stepNumber`, and must be ZERO-BASED** (0,1,2…). Read-back returns `step` (1-based) — never send `step`. `objectTypeId:300`=SQL Query, `activityObjectId`=queryDefinitionId. Verified at 6 steps. |
 | Read a query activity | REST `GET /automation/v1/queries/{id}` or `GET /automation/v1/queries` (list) | Reliable. Best way to learn the exact JSON schema — mirror an existing item. |
 | Read an automation | REST `GET /automation/v1/automations/{id}` | Reliable by id. Shows steps, activities (with `id`, `activityObjectId`, `objectTypeId`), target DEs, row counts. |
-| List automations | SOAP `Retrieve` `Program` (Properties: Name, CustomerKey, ObjectID) | More reliable than REST list. Paginated / non-deterministic ordering — don't assume completeness from one call. |
+| List automations | REST `GET /automation/v1/automations` (worked, 17 items) or SOAP `Retrieve` `Program` | REST list returned items here; don't assume completeness from one call. |
+| **Delete** an automation | **SOAP `Delete` ObjectType `Automation`** (by `ObjectID`) → `<OverallStatus>OK` | REST `DELETE /automation/v1/automations/{id}` → **404** (not supported). |
 | DE prerequisites | REST `/data/v1/customobjects` (create/read), SOAP `Update` (add fields), REST `PATCH` (toggle sendable) | All work. |
 
 ### Working SQL Query create payload (REST)
@@ -44,20 +45,23 @@ POST /automation/v1/queries
 }
 ```
 
-### Wiring a query into an automation step (REST)
+### Assembling a MULTI-STEP automation in one workflow (REST)
+The trap that looked like a hard limit: the **write** field is **`stepNumber`** and must be **ZERO-BASED**; the **read-back** field is **`step`** (1-based). Sending `step` (or 1-based `stepNumber`) → opaque **500** on PATCH, or a clear **400** on POST (*"step collection must be zero-based and not contain gaps…"*). Get the field + base right and N steps assemble in a single POST (or PATCH onto an existing automation).
 ```json
-PATCH /automation/v1/automations/{automationId}
+POST /automation/v1/automations        // or PATCH /automation/v1/automations/{id} to replace steps
 {
-  "name": "MCP Test",
+  "name": "AUTO_Segment_Pipeline",
+  "key": "<guid>",
   "steps": [
-    { "name": "Step 1", "step": 1,
-      "activities": [
-        { "name": "MCP Test SQL",
-          "activityObjectId": "<queryDefinitionId>",
-          "objectTypeId": 300,
-          "displayOrder": 1 } ] } ]
+    { "name": "Step 1", "stepNumber": 0,
+      "activities": [ { "name": "Q1", "activityObjectId": "<queryDefId1>", "objectTypeId": 300, "displayOrder": 1 } ] },
+    { "name": "Step 2", "stepNumber": 1,
+      "activities": [ { "name": "Q2", "activityObjectId": "<queryDefId2>", "objectTypeId": 300, "displayOrder": 1 } ] }
+    // … stepNumber 2,3,4,… contiguous, unique, zero-based …
+  ]
 }
 ```
+`id` on steps/activities is optional (server assigns). Wrapped as `sfmc.create_automation(name, [(q1name,q1id),(q2name,q2id),…], tok)` and `sfmc.set_automation_steps(autoId, [...], tok)`.
 
 ---
 
@@ -72,7 +76,8 @@ PATCH /automation/v1/automations/{automationId}
 | **Inline SQL inside an Automation object** (SOAP `<Activities><SQLStatement>…`) | Returns HTTP 200 but is **silently discarded** — no real activity is created. (Source of an earlier false "success" — never use this pattern.) |
 | **Create SQL activity via SOAP `QueryDefinition`** | Generic `CreateQueryDefinition` exception (ErrorID). Use the REST `/automation/v1/queries` endpoint instead. |
 | **SQL Query Activity with a CTE (`WITH …`)** | **400** "Error saving the Query field. Only SELECT queries are valid. Select must be the first word of the query." → rewrite with **nested derived tables**; the statement must start with `SELECT`. |
-| **Automation PATCH with >1 step OR >1 activity per step** | Multi-**step** payload → **500** (Internal Server Error); two activities in one step → **400**. Only **one single-step, single-activity** automation per PATCH works reliably. Make queries **self-contained** (read the source DE, no inter-step dependency) and use a separate single-step automation each. |
+
+> **Correction (2026-06-11):** an earlier version of this doc listed *"multi-step automations can't be built via API (PATCH 500)"* as a blocker. **That was wrong** — it was a client-side mistake (sending the read-back field `step` / 1-based numbers). Multi-step works fine with **zero-based `stepNumber`** (see the assembly recipe above). Self-contained queries are still good practice, but are no longer *required*.
 
 ### Workaround used for sendable-DE Update (with caveats)
 To create an Update SQL activity whose target is a sendable DE:
