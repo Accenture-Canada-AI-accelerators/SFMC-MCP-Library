@@ -3,7 +3,7 @@
 What works and what doesn't when managing **Automation Studio** (and the SQL activities inside it) via the SFMC REST/SOAP APIs. Every entry below was verified against the live tenant by reading the actual result (SOAP `<OverallStatus>` / REST read-back), **not** just the HTTP status code.
 
 Tenant: `<TENANT>` · Stack S7 · EID <EID>
-Last verified: 2026-06-01
+Last verified: 2026-06-01 (+ 2026-06-11: SOAP row-read null-value parsing, REST-401-vs-SOAP-500 expiry, TTL batching)
 
 ---
 
@@ -89,9 +89,10 @@ Caveats: mutates a production DE; may briefly affect anything using it (e.g. a j
 ## ⚠️ Cross-cutting API gotchas (these caused most of the debugging pain)
 
 - **SOAP returns HTTP 200 even on failure.** The real outcome is in `<OverallStatus>` / `<StatusMessage>` (and per-result `<StatusCode>`). Always parse the body; never trust the HTTP code alone.
-- **OAuth token TTL ~18 min.** An expired token causes **empty-body HTTP 500** on SOAP (looks like a schema error but isn't). Refresh before any multi-step operation.
+- **OAuth token TTL ~18 min.** Expiry surfaces **differently per API**: REST returns **401**, but SOAP returns **HTTP 500** (an empty-body, schema-error-*looking* fault that is **not** 401). On either, refresh once and retry — don't chase a "transient SOAP fault." Refresh before any multi-step operation and **batch the live calls inside the window**: reasoning-heavy or file-writing steps between calls silently burn the ~18 min (do the live block first, then the writing).
 - **REST automation *list* is unreliable** here (`GET /automation/v1/automations` returned 0). Read by id, or use SOAP `Program` for names.
 - **Field lists:** `GET /data/v1/customobjects/{id}/fields` works (parse the `.fields[]` array). SOAP `DataExtensionField` retrieve **500s** when you include certain properties (e.g. `CategoryID`) or a filter.
+- **Reading DE *rows* via SOAP — parse per `<Property>`, null-safe.** SFMC **omits the `<Value>` element entirely for null/empty fields**, so a flat `<Name>…</Name>\s*<Value>…</Value>` regex mis-aligns and **silently drops or mislabels values** on multi-field reads (a single-field read/count is unaffected, which hides the bug). Iterate each row's `<Property>` blocks and default a missing `<Value>` to empty. **Tell:** if two reads of the same static rows disagree when you change the requested field list, it's the parser, not flaky data — cross-check row counts. (`sfmc.soap_retrieve` fixed 2026-06-11.)
 - **Mirror, don't guess:** for query activities, `GET` an existing one to copy the exact field shape (required `categoryId`, `targetId`, update-type ids) rather than guessing the schema.
 - **SMS / MobileConnect via API:** the keyword endpoint (`/legacy/v1/beta/mobile/keyword/`) returns **403** when SMS isn't provisioned / the package lacks scope — SMS *send* activities can't be built or sent via API. Deliver the SMS copy and treat the send as UI-only.
 - **Token persistence:** the MCP refresh can leave a **stale token** in `.claude.json` (config write via `claude mcp add` is unreliable). Dump the raw token to a file on refresh and read that first; an `mcpt-` bridge token must be unwrapped to its inner 4-segment JWT for REST.
