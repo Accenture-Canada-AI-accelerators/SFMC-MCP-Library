@@ -130,6 +130,7 @@ Organized into knowledge folders:
 | &nbsp;&nbsp;[`ARCHITECTURE.md`](Outputs/ARCHITECTURE.md) | Architecture diagrams (Mermaid) + key design decisions |
 | &nbsp;&nbsp;[`MCP_TEST_CASES.md`](Outputs/MCP_TEST_CASES.md) | Test-case & use-case library for validating the integration |
 | &nbsp;&nbsp;[`SFMC-MCE-to-MCN-Migration-Research.md`](Outputs/SFMC-MCE-to-MCN-Migration-Research.md) | MCE → Marketing Cloud Next migration research (adversarially verified) |
+| &nbsp;&nbsp;[`MCE-MCP-Tool-Catalog.md`](Outputs/MCE-MCP-Tool-Catalog.md) | Official MCE MCP server tool catalog — ~100 tools across 9 categories |
 | &nbsp;&nbsp;[`SFMC-MCP-SESSION-NOTES.md`](Outputs/SFMC-MCP-SESSION-NOTES.md) | Working session notes |
 | &nbsp;&nbsp;`Salesforce MCP + Claude Code Integration Guide.docx` | Setup & integration guide |
 | **`Inputs/`** | |
